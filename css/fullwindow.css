@@ -1,0 +1,109 @@
+
+/* 现代艺术馆  【使用】
+ * http://www.peise.net/2014/0222/4112.html
+ * 棕褐    #B87348
+ * 桃红    #F9957D
+ * 浅橄榄  #DFEBB7
+ * 冰蓝    #D0F3F7
+ * 海水蓝  #6BCDDA
+ */
+
+/* 橄榄色家居
+ * http://www.peise.net/2012/1227/2655.html
+ * 炭灰色  #14162B
+ * 月白    #EBE3E0
+ * 浅橄榄  #CACA8C
+ * 橄榄    #BDC264
+ * 深橄榄  #A6A823
+ */
+
+/* 带有山大红的英伦风
+ * 山大红  #930D14
+ * 红      #BD5437
+ * 深灰    #91918D
+ * 浅灰    #E6E4DA
+ * 瓷白    #FFFFFF
+ */
+
+#title_text {
+    position: absolute; /*使用绝对位置实现对canvas的覆盖显示。*/
+    left: 30px;
+    top: 30px;
+    padding: 5px;
+    background-color: #FFFFFF;
+    color: #B87348;
+    border: solid;
+    border-width: 3px;
+    font-weight: bold;
+    font-size: 120%;
+}
+
+#instruction_text {
+    position: absolute;
+    left: 30px;
+    top: 100px;
+    padding: 5px;
+    background-color: #DFEBB7;
+    fill-opacity: 0.75;
+    color: #101010;
+    border: dashed;
+    border-width: 2px;
+    font-size: 70%;
+    line-height: 20%;
+    opacity: 0.6;
+}
+
+#debug_text {
+    position: absolute;
+    right: 20%;
+    bottom: 0px;
+    color: #0f0f0f;
+    max-height: 50%;
+    font-size: 33%;
+    text-align: center;
+    overflow: hidden;
+}
+
+body {
+    margin: 0px;
+    border: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#canvas {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    padding: 0px;
+    border: 0px;
+    margin: 0px;
+}
+
+#canvas-2d-wheel {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    padding: 0px;
+    border: 0px;
+    margin: 0px;
+}
+
+#dat_gui {
+    position: relative;
+    /* left会在脚本中被重置，故此处仅作初始化，其数值没有实际意义 */
+    left: 0px;
+    top: 0px;
+}
+
+.key {
+    padding-bottom: 2px;
+    padding-top: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 7px;
+    font-weight: bold;
+    background-color: #CEC3C0;
+    color: #000000;
+}

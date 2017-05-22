@@ -1,30 +1,4 @@
 
-/* 现代艺术馆  【使用】
- * http://www.peise.net/2014/0222/4112.html
- * 棕褐    #B87348
- * 桃红    #F9957D
- * 浅橄榄  #DFEBB7
- * 冰蓝    #D0F3F7
- * 海水蓝  #6BCDDA
- */
-
-/* 橄榄色家居
- * http://www.peise.net/2012/1227/2655.html
- * 炭灰色  #14162B
- * 月白    #EBE3E0
- * 浅橄榄  #CACA8C
- * 橄榄    #BDC264
- * 深橄榄  #A6A823
- */
-
-/* 带有山大红的英伦风
- * 山大红  #930D14
- * 红      #BD5437
- * 深灰    #91918D
- * 浅灰    #E6E4DA
- * 瓷白    #FFFFFF
- */
-
 #title_text {
     position: absolute; /*使用绝对位置实现对canvas的覆盖显示。*/
     left: 30px;
@@ -90,11 +64,15 @@ body {
     margin: 0px;
 }
 
-#dat_gui {
-    position: relative;
-    /* left会在脚本中被重置，故此处仅作初始化，其数值没有实际意义 */
-    left: 0px;
-    top: 0px;
+#popup_text {
+    display: none;
+    position: absolute;
+    font-size: large;
+    width: 40%;
+    text-align: center;
+    padding: 20px;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 2em 1em #DFEBB7;
 }
 
 .key {

@@ -2,6 +2,48 @@
  * Created by 40637 on 2017/3/22.
  */
 
+// --------------------------------------------------------------
+//                        弹出提示部分
+// --------------------------------------------------------------
+var popup = function() {    // open IIFE
+    "use strict";
+
+    // private attributes and methods
+    var jq;
+    var self;
+
+    // 是否显示页面弹出提示
+    var handle;
+
+    // public attributes and methods
+    var publicSet = {
+        // 在弹出提示中显示指定的文本
+        showPopup: function(text) {
+            if (popup) {
+                clearTimeout(popup);
+            }
+            jq.html(text);
+            jq.fadeIn(200);
+            handle = setTimeout(self.hidePopup, 2000);
+        },
+        // 隐藏弹出提示
+        hidePopup: function () {
+            jq.fadeOut(200);
+            handle = null;
+        },
+        initialize: function () {
+            jq = $('#popup_text');
+            self = window.popup;
+        },
+        getJQueryObject: function () {
+            return jq;
+        }
+    };
+
+    return publicSet;
+}();    // close IIFE
+popup.initialize();
+
 var scene = new THREE.Scene();
 
 var playAnimation = false;
@@ -295,6 +337,10 @@ var Renderer = {
         if (this.renderer) {
             this.renderer.setSize(this.canvasWidth, this.canvasHeight);
         }
+
+        var jqPopup = popup.getJQueryObject();
+        jqPopup.css('margin-top', (0.70 * window.innerHeight) + 'px');
+        jqPopup.css('left', (0.25 * window.innerWidth) + 'px');
     },
     // Redraw(): It will redraw the whole canvas, so that we should call it as less as possible.
     redraw: function () {

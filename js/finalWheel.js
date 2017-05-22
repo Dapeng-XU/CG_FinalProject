@@ -2,6 +2,86 @@
  * Created by 40637 on 2017/5/21.
  */
 
+var dpOrthographicCamera = {
+    left: -100,
+    right: 100,
+    top: 200,
+    bottom: 0,
+    near: 1,
+    far: 1000,
+    position: new THREE.Vector3(),
+    lookAt: new THREE.Vector3(),
+    up: new THREE.Vector3(),
+    initialize: function() {
+        this.position.z = 100;
+        this.position.y = 10;
+        this.lookAt.y = 10;
+    }
+};
+dpOrthographicCamera.initialize();
+
+var dpPerspectiveCamera = function() {
+    "use strict";
+
+    // private attributes and methods
+
+    // public attributes and methods
+    var publicSet = {
+
+    };
+
+    return publicSet;
+}();
+
+var dpRayTracing = function() {
+    "use strict";
+
+    // private attributes and methods
+    var backgroundColor;
+
+    function closestIntersection(direction, near, far) {
+
+    }
+
+    function shadeAtPoint(position) {
+
+    }
+
+    function rayTrace(direction) {
+        if (direction instanceof THREE.Vector3) {
+            var closestPoint = closestIntersection(direction, near, far);
+            if (closestPoint instanceof THREE.Vector3) {
+                return shadeAtPoint(closestPoint);
+            } else
+                return backgroundColor;
+        } else
+            return backgroundColor;
+    }
+
+    // public attributes and methods
+    var publicSet = {
+        tracePixel: function(row, col) {
+            if (col == 0) {
+                return new THREE.Color(0xff0000);
+            }
+            if (row == 0) {
+                return new THREE.Color(0xff0000);
+            }
+            return new THREE.Color(0xffffff);
+        },
+        initialize: function () {
+            backgroundColor = new THREE.Color(0x000000);
+        },
+        setBackgroundColor: function (color) {
+            if (color instanceof THREE.Color) {
+                backgroundColor.copy(color);
+            }
+        }
+    };
+
+    return publicSet;
+}();
+
 var dpCanvas2D = function () {  // open IIFE
     "use strict";
 
@@ -22,6 +102,7 @@ var dpCanvas2D = function () {  // open IIFE
         var i;
         var size = canvasWidth * canvasHeight;
         frameBuffer = new Array(size);
+        dpRayTracing.setBackgroundColor(new THREE.Color(0x000000));
     }
 
     function showFrameBuffer() {
@@ -35,18 +116,6 @@ var dpCanvas2D = function () {  // open IIFE
                 context.fillRect(c, r, 1, 1);
             }
         }
-    }
-
-    function tracePixel(row, col) {
-        if (col == 0 || col == canvasWidth - 1) {
-            errout("[" + row + ", " + col + "]");
-            return new THREE.Color(0xff0000);
-        }
-        if (row == 0 || row == canvasHeight - 1) {
-            errout("[" + row + ", " + col + "]");
-            return new THREE.Color(0xff0000);
-        }
-        return new THREE.Color(0xffffff);
     }
 
     // public attributes and methods
@@ -73,8 +142,7 @@ var dpCanvas2D = function () {  // open IIFE
 
 
 
-
-                    frameBuffer[r * canvasWidth + c] = tracePixel(r, c);
+                    frameBuffer[r * canvasWidth + c] = dpRayTracing.tracePixel(r, c);
                     // frameBuffer[r * canvasWidth + c] = new THREE.Color(0xffffff);
                     if ( 100 < r && r < 200 ) {
                         if ( 200 < c && c < 400) {

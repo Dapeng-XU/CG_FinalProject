@@ -6,8 +6,8 @@
 var DEBUG_TEXT_MAX_NUMBER = 3;
 
 // 是否开启调试模式，true开启，false关闭
-var DEBUG_ON_OFF = true;
-// var DEBUG_ON_OFF = false;
+// var DEBUG_ON_OFF = true;
+var DEBUG_ON_OFF = false;
 
 // 更规范的方式，定义全局变量，然后通过全局变量访问其他库中定义的函数和变量
 var THREE = window.THREE;
@@ -124,3 +124,46 @@ function printMatrix4(mat4) {
         }
     }
 }
+
+
+// --------------------------------------------------------------
+//                        弹出提示部分
+// --------------------------------------------------------------
+var popup = function() {    // open IIFE
+    "use strict";
+
+    // private attributes and methods
+    var jq;
+    var self;
+
+    // 是否显示页面弹出提示
+    var handle;
+
+    // public attributes and methods
+    var publicSet = {
+        // 在弹出提示中显示指定的文本
+        show: function(text) {
+            if (handle) {
+                clearTimeout(handle);
+            }
+            jq.html(text);
+            jq.fadeIn(200);
+            handle = setTimeout(self.hide, 2000);
+        },
+        // 隐藏弹出提示
+        hide: function () {
+            jq.fadeOut(200);
+            handle = null;
+        },
+        initialize: function () {
+            jq = $('#popup_text');
+            self = window.popup;
+        },
+        getJQueryObject: function () {
+            return jq;
+        }
+    };
+
+    return publicSet;
+}();    // close IIFE
+popup.initialize();

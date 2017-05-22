@@ -2,48 +2,6 @@
  * Created by 40637 on 2017/3/22.
  */
 
-// --------------------------------------------------------------
-//                        弹出提示部分
-// --------------------------------------------------------------
-var popup = function() {    // open IIFE
-    "use strict";
-
-    // private attributes and methods
-    var jq;
-    var self;
-
-    // 是否显示页面弹出提示
-    var handle;
-
-    // public attributes and methods
-    var publicSet = {
-        // 在弹出提示中显示指定的文本
-        showPopup: function(text) {
-            if (popup) {
-                clearTimeout(popup);
-            }
-            jq.html(text);
-            jq.fadeIn(200);
-            handle = setTimeout(self.hidePopup, 2000);
-        },
-        // 隐藏弹出提示
-        hidePopup: function () {
-            jq.fadeOut(200);
-            handle = null;
-        },
-        initialize: function () {
-            jq = $('#popup_text');
-            self = window.popup;
-        },
-        getJQueryObject: function () {
-            return jq;
-        }
-    };
-
-    return publicSet;
-}();    // close IIFE
-popup.initialize();
-
 var scene = new THREE.Scene();
 
 var playAnimation = false;
@@ -308,9 +266,13 @@ var cameraEllipseAnimate = {
 
 $(document).ready(function () {
     "use strict";
+    popup.show("Canvas 3D Resizing");
     Renderer.canvasResize();
+    popup.show("Canvas 2D Resizing");
     dpCanvas2D.setPosition(Renderer.canvasWidth, 0, Renderer.canvasWidth - 1, Renderer.canvasHeight);
+    popup.show("Canvas 3D Redrawing");
     Renderer.redraw();
+    popup.show("Canvas 2D Redrawing");
     dpCanvas2D.redraw();
 });
 

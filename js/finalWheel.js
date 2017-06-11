@@ -378,6 +378,7 @@ function dpCheckboardMaterial(size) {
 }
 
 dpCheckboardMaterial.prototype = {
+    LENGTH_OF_ONE_BRICK: 100,
     BLACK: new THREE.Color(0x000000),
     WHITE: new THREE.Color(0xFFFFFF),
     initialize: function (position, normal) {
@@ -527,6 +528,38 @@ var object_group = [
     new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
     // new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
 ];
+
+var dpCuboids = {
+    POSITIONS: [
+        [0,0,0],
+        [1,0,-1],
+        [1,0,1],
+        [0,2,0],
+        [0,1,1],
+        [1,1,-2],
+        [1,2,-3],
+        [1,1,0],
+        [1,1,2]
+    ],
+    drawInScene: function() {
+
+    }
+};
+
+var Spheres = {
+    POSITIONS: [
+        [4,0,2],
+        [2,0,4],
+        [-2,0,-2],
+        [3,0,-3],
+        [2,2,1],
+        [1,0,2],
+        [1,2,0]
+    ],
+    drawInScene: function() {
+
+    }
+};
 
 var dpRayTracing = function() {
     "use strict";

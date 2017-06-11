@@ -33,8 +33,8 @@ function dpIntersection(object, position, rayPosition, normal, color) {
     this.object = object;
     this.position = position;
     this.rayPosition = rayPosition;
-    this.color = color;
     this.normal = normal;
+    this.color = color;
 }
 
 function dpPlane(normal, point, material) {
@@ -146,6 +146,107 @@ dpTriangle.prototype = {
     }
 };
 
+function dpCube(position, length, material) {
+    "use strict";
+    if (!(position instanceof THREE.Vector3)) {
+        errout(ERROR_MISMATCHED_TYPE, true, true);
+    }
+    this.center = new THREE.Vector3();
+    this.center.copy(position);
+    this.radius = length / 2;
+    this.material = material;
+
+}
+
+dpSphere.prototype = {
+    intersectsRay: function(ray) {
+        "use strict";
+        var center2 = new THREE.Vector3();
+        var direction = new THREE.Vector3();
+        var plane;
+        var minRayPosition = new dpIntersection(null, null, Infinity, null, null);
+        var intersection = new dpIntersection(null, null, null, null, null);
+
+        // left:
+        direction.set(-this.radius,0,0);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.y - intersection.position.y) < this.radius &&
+            Math.abs(this.center.z - intersection.position.z) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        // Right
+        direction.set(this.radius,0,0);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.y - intersection.position.y) < this.radius &&
+            Math.abs(this.center.z - intersection.position.z) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        // Up
+        direction.set(0,this.radius,0);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
+            Math.abs(this.center.z - intersection.position.z) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        // Down
+        direction.set(0,-this.radius,0);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
+            Math.abs(this.center.z - intersection.position.z) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        // Front
+        direction.set(0,0,this.radius);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
+            Math.abs(this.center.y - intersection.position.y) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        // Back
+        direction.set(0,0,-this.radius);
+        center2.addVectors(this.center, direction);
+        plane = new dpPlane(direction, center2, null);
+        intersection = plane.intersectsRay(ray);
+        if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
+            Math.abs(this.center.y - intersection.position.y) < this.radius) {
+            if (intersection.rayPosition < minRayPosition.rayPosition) {
+                minRayPosition = intersection;
+            }
+        }
+
+        if (minRayPosition.rayPosition === Infinity) {
+            return null;
+        } else {
+            return minRayPosition;
+        }
+    }
+};
+
 function dpSphere(position, radius, material) {
     "use strict";
     if (!(position instanceof THREE.Vector3)) {
@@ -173,7 +274,8 @@ dpSphere.prototype = {
         else {
             var part1 = - cp_d / d_square;
             var part2 = Math.sqrt(delta) / d_square;
-            var t = (part1 - part2 > 0) ? (part1 - part2) : (part1 + part2);
+            // var t = (part1 - part2 > 0) ? (part1 - part2) : (part1 + part2);
+            var t = part1 - part2;
             var point = ray.getPoint(t);
             var normal = new THREE.Vector3();
             normal.subVectors(point, this.center).normalize();
@@ -234,7 +336,7 @@ dpPerspectiveCamera.prototype = {
         var IUP_length = 2 * this.DISTANCE_FROM_CAMERA_TO_IMAGEPLANE * Math.tan(this.fov / 2);
         tmp_up.multiplyScalar(IUP_length);
         var tmp_right = new THREE.Vector3();
-        tmp_right.copy(this.IRight_n).multiplyScalar(x / canvasWidth );
+        tmp_right.copy(this.IRight_n).multiplyScalar( x / canvasWidth );
         tmp_right.multiplyScalar(this.aspect * IUP_length);
         newDirection.add(tmp_up).add(tmp_right);
         return new dpRay(this.position, newDirection);
@@ -391,9 +493,9 @@ dpPhongIlluminationMaterial.prototype = {
 };
 
 var light_group = [
-    new dpPointLight(new THREE.Vector3(9,9,9), 40, new THREE.Color(0xffff00)),
-    new dpDirectionalLight(new THREE.Vector3(0,0,-1), 5, new THREE.Color(0xdddddd)),
-    new dpDirectionalLight(new THREE.Vector3(-1,-1,-1), 5, new THREE.Color(0xdddddd))
+    new dpPointLight(new THREE.Vector3(6,6,6), 40, new THREE.Color(0xffff00)),
+    new dpDirectionalLight(new THREE.Vector3(0,-1,0), 5, new THREE.Color(0xdddddd))
+    // new dpDirectionalLight(new THREE.Vector3(-1,-1,-1), 5, new THREE.Color(0xdddddd))
 ];
 
 // var object_group = [
@@ -406,16 +508,24 @@ var light_group = [
 //     new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4))
 // ];
 
+var checkboard_scalar = 1;
+
 var object_group = [
-    new dpSphere(new THREE.Vector3(6,8,1), 2, new dpPhongIlluminationMaterial(
+    new dpSphere(new THREE.Vector3(2,2,4), 2, new dpPhongIlluminationMaterial(
         new THREE.Color().setStyle('darkgreen'),
         new THREE.Color().setStyle('green'),
         new THREE.Color().setStyle('greenyellow'),
         0.2, 0.4, 0.6, 5)
     ),
-    new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4)),
-    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(2)),
-    new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1))
+    new dpSphere(new THREE.Vector3(6,2,4), 2, new dpPhongIlluminationMaterial(
+        new THREE.Color().setStyle('blue'),
+        new THREE.Color().setStyle('midnightblue'),
+        new THREE.Color().setStyle('whitesmoke'),
+        0.2, 0.4, 0.6, 5)
+    ),
+    // new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4 * checkboard_scalar)),
+    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
+    // new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
 ];
 
 var dpRayTracing = function() {
@@ -449,7 +559,7 @@ var dpRayTracing = function() {
         return finalColor;
     }
 
-    function closestIntersection(ray) {
+    function closestIntersection(ray, camera) {
         if (!(ray instanceof dpRay)) {
             errout(ERROR_MISMATCHED_TYPE, true, true);
         }
@@ -459,7 +569,8 @@ var dpRayTracing = function() {
             if (typeof object.intersectsRay === "function") {
                 intersection = object.intersectsRay(ray);
                 if ( intersection instanceof dpIntersection )
-                    if (0 < intersection.rayPosition && intersection.rayPosition < minRayPosition.rayPosition) {
+                    if (0 < intersection.rayPosition && intersection.rayPosition < camera.far &&
+                        intersection.rayPosition < minRayPosition.rayPosition) {
                         minRayPosition = intersection;
                     }
             }
@@ -471,25 +582,58 @@ var dpRayTracing = function() {
         }
     }
 
-    function rayTrace(ray) {
-        if (!(ray instanceof dpRay)) {
+    // function rayTrace(ray) {
+    //     if (!(ray instanceof dpRay)) {
+    //         errout(ERROR_MISMATCHED_TYPE, true, true);
+    //     }
+    //     var closest = closestIntersection(ray);
+    //     if ( closest !== null ) {
+    //         return shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+    //     } else {
+    //         return backgroundColor;
+    //     }
+    // }
+
+    var MAX_DEPTH = 2;
+    var REFLECTIVENESS = 0.25;
+
+    function recursiveRayTracer(ray, depth, camera) {
+        if ( !(ray instanceof dpRay) ) {
             errout(ERROR_MISMATCHED_TYPE, true, true);
         }
-        var closest = closestIntersection(ray);
+        var closest = closestIntersection(ray, camera);
         if ( closest !== null ) {
-            return shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+            if (closest.object === null || closest.position === null ||
+                closest.rayPosition === null || closest.normal === null) {
+                errout(ERROR_MISMATCHED_TYPE, true, true);
+            }
+
+            var finalColor = new THREE.Color();
+            if (depth < MAX_DEPTH) {
+                var reflectionVector = new THREE.Vector3();
+                reflectionVector.copy(closest.normal).multiplyScalar(-2 * closest.normal.dot(ray.direction));
+                reflectionVector.add(ray.direction);
+                var reflectionRay = new dpRay(closest.position, reflectionVector);
+                var reflectiveColor = recursiveRayTracer(reflectionRay, depth + 1, camera);
+                var shadingColor = shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+                reflectiveColor.multiplyScalar(REFLECTIVENESS);
+                shadingColor.multiplyScalar(1 - REFLECTIVENESS);
+                finalColor.addColors(shadingColor, reflectiveColor);
+            } else {
+                finalColor = shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+            }
+
+            return finalColor;
         } else {
             return backgroundColor;
         }
     }
 
-    function recursiveRayTracer() {     // TODO
-
-    }
-
     // public attributes and methods
     var publicSet = {
-        nTrace: rayTrace
+        nTrace: function (ray, camera) {
+            return recursiveRayTracer(ray, 0, camera);
+        }
     };
 
     return publicSet;
@@ -517,8 +661,8 @@ var dpCanvas2D = function () {  // open IIFE
         var i;
         var size = canvasWidth * canvasHeight;
         frameBuffer = new Array(size);
-        camera = new dpPerspectiveCamera(90, canvasWidth / canvasHeight, 1, 1000);
-        camera.move( new THREE.Vector3(10,10,10), new THREE.Vector3(-5,0,0), new THREE.Vector3(0,1,0) );
+        camera = new dpPerspectiveCamera(90, canvasWidth / canvasHeight, 1, 500);
+        camera.move( new THREE.Vector3(0,1,10), new THREE.Vector3(0,1,0), new THREE.Vector3(0,1,0) );
     }
 
     function showFrameBuffer() {
@@ -564,27 +708,24 @@ var dpCanvas2D = function () {  // open IIFE
         redraw: function() {
             var r, c;
             initializeFrameBuffer();
+            var averageColor = new THREE.Color();
+            var sum_r = 0, sum_g = 0, sum_b = 0;
+            var colors = [null, null, null, null, null];
             for (r = 0; r < canvasHeight; r++) {
                 for (c = 0; c < canvasWidth; c++) {
-                    // frameBuffer[r * canvasWidth + c] = dpRayTracing.nTrace(
-                    //     camera.getViewerRay(c, r, canvasWidth, canvasHeight));
-                    var colors = [null, null, null, null, null];
-                    colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r - 0.25, canvasWidth, canvasHeight));
-                    colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r - 0.25, canvasWidth, canvasHeight));
-                    colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.00, r + 0.00, canvasWidth, canvasHeight));
-                    colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r + 0.25, canvasWidth, canvasHeight));
-                    colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r + 0.25, canvasWidth, canvasHeight));
-                    var averageColor = new THREE.Color();
-                    var sum_r = 0, sum_g = 0, sum_b = 0;
+                    // frameBuffer[r * canvasWidth + c] = dpRayTracing.nTrace(camera.getViewerRay(c, r, canvasWidth, canvasHeight), camera);
+                    colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
+                    colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
+                    colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.00, r + 0.00, canvasWidth, canvasHeight), camera);
+                    colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
+                    colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
+                    sum_r = 0; sum_g = 0; sum_b = 0;
                     for (var i = 0; i < 5; i++) {
                         sum_r += colors[i].r;
                         sum_g += colors[i].g;
                         sum_b += colors[i].b;
                     }
-                    averageColor.r = sum_r / 5;
-                    averageColor.g = sum_g / 5;
-                    averageColor.b = sum_b / 5;
-                    frameBuffer[r * canvasWidth + c] = averageColor;
+                    frameBuffer[r * canvasWidth + c] = new THREE.Color(sum_r / 5, sum_g / 5, sum_b / 5);
                 }
             }
             // drawRectangle(200, 100, 240, 120, new THREE.Color(0xff0000));

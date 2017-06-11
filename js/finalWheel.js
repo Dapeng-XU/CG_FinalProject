@@ -146,6 +146,42 @@ dpTriangle.prototype = {
     }
 };
 
+function dpSphere(position, radius, material) {
+    "use strict";
+    if (!(position instanceof THREE.Vector3)) {
+        errout(ERROR_MISMATCHED_TYPE, true, true);
+    }
+    this.center = new THREE.Vector3();
+    this.center.copy(position);
+    this.radius = radius;
+    this.material = material;
+}
+
+dpSphere.prototype = {
+    intersectsRay: function(ray) {
+        "use strict";
+        var cp = new THREE.Vector3();
+        cp.subVectors(ray.origin, this.center);
+        var cp_d = cp.dot(ray.direction);
+        var d_square = ray.direction.lengthSq();
+        var delta = cp_d;
+        delta = delta * delta;
+        delta -= cp.lengthSq() * d_square;
+        delta += this.radius * this.radius;
+        if (delta < 0)
+            return null;
+        else {
+            var part1 = - cp_d / d_square;
+            var part2 = Math.sqrt(delta) / d_square;
+            var t = (part1 - part2 > 0) ? (part1 - part2) : (part1 + part2);
+            var point = ray.getPoint(t);
+            var normal = new THREE.Vector3();
+            normal.subVectors(point, this.center).normalize();
+            return new dpIntersection(this, point, t, normal, null);
+        }
+    }
+};
+
 function dpPerspectiveCamera(fov, aspect, near, far) {
     "use strict";
     this.position = new THREE.Vector3(0,0,0);
@@ -182,10 +218,10 @@ dpPerspectiveCamera.prototype = {
         IUp.subVectors(up,
             (new THREE.Vector3()).copy(this.direction).multiplyScalar(up.dot(this.direction))
         );
-        this.IUp_n.copy(IUp.normalize());
+        this.IUp_n.copy(IUp.normalize().negate());
 
         // compute the vector IRight_n
-        this.IRight_n.copy((new THREE.Vector3()).crossVectors(this.direction, IUp).normalize());
+        this.IRight_n.copy((new THREE.Vector3()).crossVectors(this.direction, IUp).normalize().negate());
     },
     getViewerRay: function (x, y, canvasWidth, canvasHeight) {
         "use strict";
@@ -203,6 +239,35 @@ dpPerspectiveCamera.prototype = {
         newDirection.add(tmp_up).add(tmp_right);
         return new dpRay(this.position, newDirection);
     }
+};
+
+function dpDirectionalLight(direction, intensity, color) {
+    "use strict";
+    if (!(direction instanceof THREE.Vector3) || !(color instanceof THREE.Color)) {
+        errout(ERROR_MISMATCHED_TYPE, true, true);
+    }
+    this.direction = new THREE.Vector3();
+    this.direction.copy(direction).normalize();
+    this.intensity = intensity;
+    this.color = color;
+}
+
+dpDirectionalLight.prototype = {
+
+};
+
+function dpPointLight(position, intensity, color) {
+    "use strict";
+    if (!(position instanceof THREE.Vector3) || !(color instanceof THREE.Color)) {
+        errout(ERROR_MISMATCHED_TYPE, true, true);
+    }
+    this.position = position;
+    this.intensity = intensity;
+    this.color = color;
+}
+
+dpPointLight.prototype = {
+
 };
 
 function dpCheckboardMaterial(size) {
@@ -253,57 +318,6 @@ dpCheckboardMaterial.prototype = {
     }
 };
 
-function dpDirectionalLight(direction, intensity, color) {
-    "use strict";
-    if (!(direction instanceof THREE.Vector3) || !(color instanceof THREE.Color)) {
-        errout(ERROR_MISMATCHED_TYPE, true, true);
-    }
-    this.direction = new THREE.Vector3();
-    this.direction.copy(direction).normalize();
-    this.intensity = intensity;
-    this.color = color;
-}
-
-dpDirectionalLight.prototype = {
-
-};
-
-function dpPointLight(position, intensity, color) {
-    "use strict";
-    if (!(position instanceof THREE.Vector3) || !(color instanceof THREE.Vector3)) {
-        errout(ERROR_MISMATCHED_TYPE, true, true);
-    }
-    this.position = position;
-    this.intensity = intensity;
-    this.color = color;
-}
-
-dpPointLight.prototype = {
-
-};
-
-/*var light_group = [
-    new dpDirectionalLight(new THREE.Vector3(0,0,-1), 10.0, new THREE.Color(0xdddddd)),
-    new dpDirectionalLight(new THREE.Vector3(0,0,1), 10.0, new THREE.Color(0xdddddd))
-];*/
-
-var light_group = [
-    // new dpDirectionalLight(new THREE.Vector3(0,0,-1), 1.0, new THREE.Color(0xdddddd)),
-    new dpDirectionalLight(new THREE.Vector3(0,0,-1), 1.0, new THREE.Color(0xdddddd))
-];
-
-var object_group = [
-    new dpSphere(new THREE.Vector3(1,1,1), 0.5, new dpPhongIlluminationMaterial(
-        new THREE.Color().setStyle('darkgreen'),
-        new THREE.Color().setStyle('green'),
-        new THREE.Color().setStyle('greenyellow'),
-        0.2, 0.4, 0.4, 75)
-    ),
-    new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4)),
-    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4)),
-    new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1))
-];
-
 function dpPhongIlluminationMaterial(ambient, diffuse, specular, k_a, k_d, k_s, n_shiny, reflectiveness) {
     "use strict";
     if (!(ambient instanceof THREE.Color) || !(diffuse instanceof THREE.Color) || !(specular instanceof THREE.Color)) {
@@ -329,9 +343,9 @@ dpPhongIlluminationMaterial.prototype = {
     },
     getColor: function(position, incident, distance, viewer, normal, light) {
         "use strict";
-        if (!(incident instanceof THREE.Vector3) || !(viewer instanceof THREE.Vector3)
+        if ( !(incident instanceof THREE.Vector3) || !(viewer instanceof THREE.Vector3)
             || !(normal instanceof THREE.Vector3) || !(position instanceof THREE.Vector3)
-            || ( !(light instanceof dpDirectionalLight) && !(light instanceof dpPointLight) )) {
+            || !( (light instanceof dpDirectionalLight) || (light instanceof dpPointLight) ) ) {
             errout(ERROR_MISMATCHED_TYPE, true, true);
         }
         var finalColor = new THREE.Color(0x000000);
@@ -369,46 +383,40 @@ dpPhongIlluminationMaterial.prototype = {
             )
         );
         tempColor.addColors(diffuseColor, specularColor).
-            multiplyScalar(light.intensity * occlusion).multiply(light.color);
+        multiplyScalar(light.intensity * occlusion).multiply(light.color);
         finalColor.add(tempColor);
 
         return finalColor;
     }
 };
 
-function dpSphere(position, radius, material) {
-    "use strict";
-    if (!(position instanceof THREE.Vector3)) {
-        errout(ERROR_MISMATCHED_TYPE, true, true);
-    }
-    this.center = new THREE.Vector3();
-    this.center.copy(position);
-    this.radius = radius;
-    this.material = material;
-}
+var light_group = [
+    new dpPointLight(new THREE.Vector3(9,9,9), 40, new THREE.Color(0xffff00)),
+    new dpDirectionalLight(new THREE.Vector3(0,0,-1), 5, new THREE.Color(0xdddddd)),
+    new dpDirectionalLight(new THREE.Vector3(-1,-1,-1), 5, new THREE.Color(0xdddddd))
+];
 
-dpSphere.prototype = {
-    intersectsRay: function(ray) {
-        "use strict";
-        var cp = new THREE.Vector3();
-        cp.subVectors(ray.origin, this.center);
-        var cp_d = cp.dot(ray.direction);
-        var d_square = ray.direction.lengthSq();
-        var delta = cp_d;
-        delta = delta * delta;
-        delta -= cp.lengthSq() * d_square;
-        delta += this.radius * this.radius;
-        if (delta < 0)
-            return null;
-        else {
-            var t = - ( cp_d + Math.sqrt(delta)) / d_square;
-            var point = ray.getPoint(t);
-            var normal = new THREE.Vector3();
-            normal.subVectors(point, this.center).normalize();
-            return new dpIntersection(this, point, t, normal, null);
-        }
-    }
-};
+// var object_group = [
+//     new dpSphere(new THREE.Vector3(1,1,1), 0.5, new dpPhongIlluminationMaterial(
+//         new THREE.Color().setStyle('darkgreen'),
+//         new THREE.Color().setStyle('green'),
+//         new THREE.Color().setStyle('greenyellow'),
+//         0.2, 0.4, 0.4, 75)
+//     ),
+//     new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4))
+// ];
+
+var object_group = [
+    new dpSphere(new THREE.Vector3(6,8,1), 2, new dpPhongIlluminationMaterial(
+        new THREE.Color().setStyle('darkgreen'),
+        new THREE.Color().setStyle('green'),
+        new THREE.Color().setStyle('greenyellow'),
+        0.2, 0.4, 0.6, 5)
+    ),
+    new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4)),
+    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(2)),
+    new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1))
+];
 
 var dpRayTracing = function() {
     "use strict";
@@ -592,3 +600,5 @@ var dpCanvas2D = function () {  // open IIFE
 
     return publicSet;
 }();    // close IIFE
+
+var debug_object;

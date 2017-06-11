@@ -293,7 +293,10 @@ var Renderer = {
         this.canvasHeight = window.innerHeight;
         this.canvasWidth = window.innerWidth / 2;
         if (camera) {
-            camera.aspect = this.canvasWidth / this.canvasHeight;
+
+            // two canvas in the same window
+            camera.aspect = this.canvasWidth * 2 / this.canvasHeight;
+
             camera.updateProjectionMatrix();
         }
         if (this.renderer) {
@@ -308,6 +311,10 @@ var Renderer = {
     redraw: function () {
         "use strict";
         Camera.camera = new THREE.PerspectiveCamera(40, 2, 0.1, 10000);
+
+        // two canvas in the same window
+        Camera.camera.setViewOffset(this.canvasWidth * 2, this.canvasHeight, 0, 0, this.canvasWidth, this.canvasHeight);
+
         // 每次窗口的大小发生改变时，也改变画布的大小
         window.onresize = this.canvasResize;
         this.canvasResize();
@@ -359,7 +366,7 @@ var Renderer = {
         var axisHelper = new THREE.AxisHelper(2000);
         scene.add(axisHelper);
 
-        FPS();
+        // FPS();
 
         this.animate();
         this.renderLoop();

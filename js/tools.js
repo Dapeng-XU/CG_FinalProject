@@ -7,7 +7,7 @@ var DEBUG_TEXT_MAX_NUMBER = 3;
 
 // 是否开启调试模式，true开启，false关闭
 // var DEBUG_ON_OFF = true;
-var DEBUG_ON_OFF = false;
+var DEBUG_ON_OFF = true;
 
 // 更规范的方式，定义全局变量，然后通过全局变量访问其他库中定义的函数和变量
 var THREE = window.THREE;

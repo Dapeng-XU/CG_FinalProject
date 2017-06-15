@@ -785,8 +785,7 @@ var dpCanvas2D = function () {  // open IIFE
         }
         dpRayTracing.setMaxDepth(depth);
 
-        $('#parameter-list').html('Max traversing depth = ' + depth + '<\/br>' +
-            'Anti-aliasing = ' + aa);
+        $('#parameter-list').html("Max traversing depth: " + depth + "; Anti-aliasing: " + aa);
     }
 
     function showFrameBuffer() {

@@ -272,13 +272,13 @@ var cameraEllipseAnimate = {
 
 $(document).ready(function () {
     "use strict";
-    popup.show("Canvas 3D Resizing");
+    // popup.show("Canvas 3D Resizing");
     Renderer.canvasResize();
-    popup.show("Canvas 2D Resizing");
+    // popup.show("Canvas 2D Resizing");
     dpCanvas2D.setPosition(Renderer.canvasWidth, 0, Renderer.canvasWidth - 1, Renderer.canvasHeight);
-    popup.show("Canvas 3D Redrawing");
+    // popup.show("Canvas 3D Redrawing");
     Renderer.redraw();
-    popup.show("Canvas 2D Redrawing");
+    // popup.show("Canvas 2D Redrawing");
     dpCanvas2D.redraw();
 });
 

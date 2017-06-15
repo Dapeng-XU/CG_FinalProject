@@ -5,6 +5,8 @@
 var ERROR_MISMATCHED_TYPE = 'Error: Mismatched type!';
 var THREE = window.THREE;
 
+var EPSILON = 0.01;
+
 function dpRay(origin, direction) {
     "use strict";
     if (!(origin instanceof THREE.Vector3) || !(direction instanceof THREE.Vector3)) {
@@ -62,7 +64,7 @@ dpPlane.prototype = {
         var diff = new THREE.Vector3();
         diff.subVectors(this.point, ray.origin);
         var t = ( this.normal.dot(diff) ) / nd;
-        if ( t >= 0 ) {
+        if ( t >= -EPSILON ) {
             return new dpIntersection(this, ray.getPoint(t), t, this.normal, null);
         } else {
             return null;
@@ -142,7 +144,7 @@ dpTriangle.prototype = {
         var area_pbc = tmp1.length();
         tmp1.crossVectors(pc, pa);
         var area_pca = tmp1.length();
-        if (area_pab + area_pbc + area_pca > this.area) {
+        if (area_pab + area_pbc + area_pca > this.area + EPSILON) {
             return null;
         } else {
             return new dpIntersection(this, point, intersection.rayPosition, intersection.normal, null);
@@ -698,7 +700,7 @@ var dpRayTracing = function() {
                 var reflectiveColor = recursiveRayTracer(incidentRay, depth + 1, camera);
                 var shadingColor = shadeAtPoint(closest.position, viewer, closest.normal, closest.object.material);
                 reflectiveColor.multiplyScalar(REFLECTIVENESS);
-                shadingColor.multiplyScalar(1 - REFLECTIVENESS);
+                // shadingColor.multiplyScalar(1 - REFLECTIVENESS);
                 finalColor.addColors(shadingColor, reflectiveColor);
             } else {
                 finalColor = shadeAtPoint(closest.position, viewer, closest.normal, closest.object.material);
@@ -834,16 +836,17 @@ var dpCanvas2D = function () {  // open IIFE
             var averageColor = new THREE.Color();
             var sum_r = 0, sum_g = 0, sum_b = 0;
             var colors = [null, null, null, null, null];
+            var sampling_distance = 0.4;
             for (r = 0; r < canvasHeight; r++) {
                 for (c = 0; c < canvasWidth; c++) {
                     if (!ANTI_ALIASING) {
                         frameBuffer[r * canvasWidth + c] = dpRayTracing.nTrace(camera.getViewerRay(c, r, canvasWidth, canvasHeight), camera);
                     } else {
-                        colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
-                        colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
-                        colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.00, r + 0.00, canvasWidth, canvasHeight), camera);
-                        colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
-                        colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
+                        colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - sampling_distance, r - sampling_distance, canvasWidth, canvasHeight), camera);
+                        colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + sampling_distance, r - sampling_distance, canvasWidth, canvasHeight), camera);
+                        colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c, r, canvasWidth, canvasHeight), camera);
+                        colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - sampling_distance, r + sampling_distance, canvasWidth, canvasHeight), camera);
+                        colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + sampling_distance, r + sampling_distance, canvasWidth, canvasHeight), camera);
                         sum_r = 0; sum_g = 0; sum_b = 0;
                         for (var i = 0; i < 5; i++) {
                             sum_r += colors[i].r;

@@ -19,33 +19,6 @@ document.body.onkeyup = function (event) {
 };
 
 
-var Checkerboard = {
-    LENGTH_OF_ONE_BRICK: 100,
-    NUMBERS_ALONG_HALF_EDGE: 15,
-    drawInScene: function() {
-        "use strict";
-        var checkerboard = new THREE.Group();
-        var geometry = new THREE.PlaneBufferGeometry( this.LENGTH_OF_ONE_BRICK, this.LENGTH_OF_ONE_BRICK );
-        for (var i = -this.NUMBERS_ALONG_HALF_EDGE; i < this.NUMBERS_ALONG_HALF_EDGE; i++) {
-            for (var j = -this.NUMBERS_ALONG_HALF_EDGE; j < this.NUMBERS_ALONG_HALF_EDGE; j++) {
-                var material;
-                // The color attribute of the material must be assigned in the constructor parameters.
-                if ( (i + j) % 2 === 0 ) {
-                    material = new THREE.MeshPhongMaterial( {color: 0xeeeeee, side: THREE.BackSide} );
-                } else {
-                    material = new THREE.MeshPhongMaterial( {color: 0x111111, specular: 0x111111, side: THREE.BackSide} );
-                }
-                var plane = new THREE.Mesh( geometry, material );
-                plane.translateX(i * this.LENGTH_OF_ONE_BRICK);
-                plane.translateZ(j * this.LENGTH_OF_ONE_BRICK);
-                plane.rotateX(Math.PI / 2);
-                checkerboard.add( plane );
-            }
-        }
-        scene.add(checkerboard);
-    }
-};
-
 
 // GridPosition(): Generate the position in a fixed grid by a triple(nx, ny, nz).
 function GridPosition(nx, ny, nz) {
@@ -92,6 +65,36 @@ var GRID_WIDTH = 80;
 var GRID_HEIGHT = 80;
 var GRID_DEPTH = 80;
 GridPosition.prototype.setLength(GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH);
+
+
+
+
+var Checkerboard = {
+    LENGTH_OF_ONE_BRICK: GRID_WIDTH,
+    NUMBERS_ALONG_HALF_EDGE: 30,
+    drawInScene: function() {
+        "use strict";
+        var checkerboard = new THREE.Group();
+        var geometry = new THREE.PlaneBufferGeometry( this.LENGTH_OF_ONE_BRICK, this.LENGTH_OF_ONE_BRICK );
+        for (var i = -this.NUMBERS_ALONG_HALF_EDGE; i < this.NUMBERS_ALONG_HALF_EDGE; i++) {
+            for (var j = -this.NUMBERS_ALONG_HALF_EDGE; j < this.NUMBERS_ALONG_HALF_EDGE; j++) {
+                var material;
+                // The color attribute of the material must be assigned in the constructor parameters.
+                if ( (i + j) % 2 === 0 ) {
+                    material = new THREE.MeshPhongMaterial( {color: 0xeeeeee, side: THREE.BackSide} );
+                } else {
+                    material = new THREE.MeshPhongMaterial( {color: 0x111111, specular: 0x111111, side: THREE.BackSide} );
+                }
+                var plane = new THREE.Mesh( geometry, material );
+                plane.translateX(i * this.LENGTH_OF_ONE_BRICK);
+                plane.translateZ(j * this.LENGTH_OF_ONE_BRICK);
+                plane.rotateX(Math.PI / 2);
+                checkerboard.add( plane );
+            }
+        }
+        scene.add(checkerboard);
+    }
+};
 
 
 
@@ -170,7 +173,8 @@ var Spheres = {
 var Lights = {
     POINT_LIGHT_POSITIONS: {
         readable: [
-            [1,0,0]/*,
+            [1,0,0],
+            [4,0,0]/*,
              [1,0,-3],
              [1,0,2]*//*,
              [10,2,0],
@@ -224,13 +228,15 @@ var Camera = {
     LOOKING_AT_POSITION: new THREE.Vector3(0, 0, 0),
     initialize: function() {
         "use strict";
-        var one = 300;
-        this.camera.position.copy(new THREE.Vector3(one, one, one));
+        var cPosition = new GridPosition(7,1,0);
+        var cVector = cPosition.getVector3();
+        this.camera.position.copy(cVector);
         this.update();
     },
     update: function() {
         "use strict";
         this.camera.lookAt(this.LOOKING_AT_POSITION);
+        this.camera.up.set(0,1,0);
         this.camera.updateMatrixWorld();
     }
 };
@@ -310,7 +316,7 @@ var Renderer = {
     // Redraw(): It will redraw the whole canvas, so that we should call it as less as possible.
     redraw: function () {
         "use strict";
-        Camera.camera = new THREE.PerspectiveCamera(40, 2, 0.1, 10000);
+        Camera.camera = new THREE.PerspectiveCamera(60, 2, 0.1, 10000);
 
         // two canvas in the same window
         Camera.camera.setViewOffset(this.canvasWidth * 2, this.canvasHeight, 0, 0, this.canvasWidth, this.canvasHeight);
@@ -368,7 +374,7 @@ var Renderer = {
 
         // FPS();
 
-        this.animate();
+        // this.animate();
         this.renderLoop();
     },
     renderLoop: function() {

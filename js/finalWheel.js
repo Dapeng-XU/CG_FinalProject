@@ -62,7 +62,11 @@ dpPlane.prototype = {
         var diff = new THREE.Vector3();
         diff.subVectors(this.point, ray.origin);
         var t = ( this.normal.dot(diff) ) / nd;
-        return new dpIntersection(this, ray.getPoint(t), t, this.normal, null);
+        if ( t >= 0 ) {
+            return new dpIntersection(this, ray.getPoint(t), t, this.normal, null);
+        } else {
+            return null;
+        }
     },
     getU_UV: function () {
         var u = new THREE.Vector3(0, 0, 0);
@@ -158,7 +162,7 @@ function dpCube(position, length, material) {
 
 }
 
-dpSphere.prototype = {
+dpCube.prototype = {
     intersectsRay: function(ray) {
         "use strict";
         var center2 = new THREE.Vector3();
@@ -172,6 +176,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.y - intersection.position.y) < this.radius &&
             Math.abs(this.center.z - intersection.position.z) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -184,6 +189,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.y - intersection.position.y) < this.radius &&
             Math.abs(this.center.z - intersection.position.z) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -196,6 +202,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
             Math.abs(this.center.z - intersection.position.z) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -208,6 +215,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
             Math.abs(this.center.z - intersection.position.z) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -220,6 +228,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
             Math.abs(this.center.y - intersection.position.y) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -232,6 +241,7 @@ dpSphere.prototype = {
         center2.addVectors(this.center, direction);
         plane = new dpPlane(direction, center2, null);
         intersection = plane.intersectsRay(ray);
+        if (intersection instanceof dpIntersection)
         if (Math.abs(this.center.x - intersection.position.x) < this.radius &&
             Math.abs(this.center.y - intersection.position.y) < this.radius) {
             if (intersection.rayPosition < minRayPosition.rayPosition) {
@@ -242,6 +252,7 @@ dpSphere.prototype = {
         if (minRayPosition.rayPosition === Infinity) {
             return null;
         } else {
+            minRayPosition.object = this;
             return minRayPosition;
         }
     }
@@ -263,23 +274,37 @@ dpSphere.prototype = {
         "use strict";
         var cp = new THREE.Vector3();
         cp.subVectors(ray.origin, this.center);
-        var cp_d = cp.dot(ray.direction);
-        var d_square = ray.direction.lengthSq();
-        var delta = cp_d;
-        delta = delta * delta;
-        delta -= cp.lengthSq() * d_square;
-        delta += this.radius * this.radius;
+        var b = cp.dot(ray.direction);
+        var a = ray.direction.lengthSq();
+        var c = cp.lengthSq() - this.radius * this.radius;
+        var delta = b * b - a * c;
         if (delta < 0)
             return null;
         else {
-            var part1 = - cp_d / d_square;
-            var part2 = Math.sqrt(delta) / d_square;
-            // var t = (part1 - part2 > 0) ? (part1 - part2) : (part1 + part2);
-            var t = part1 - part2;
-            var point = ray.getPoint(t);
-            var normal = new THREE.Vector3();
-            normal.subVectors(point, this.center).normalize();
-            return new dpIntersection(this, point, t, normal, null);
+            var x1, x2, sqrt_delta = Math.sqrt(delta);
+            if ( b > 0 ) {
+                x1 = c / ( - b - sqrt_delta );
+                x2 = ( - b - sqrt_delta ) / a;
+            } else {
+                x1 = ( -b + sqrt_delta ) / a;
+                x2 = c / ( -b + sqrt_delta );
+            }
+            if ( x1 <= 0 ) {
+                x1 = +Infinity;
+            }
+            if ( x2 <= 0 ) {
+                x2 = +Infinity;
+            }
+            // var t = Math.min(x1, x2);
+            var t = x2;
+            if ( t === +Infinity ) {
+                return null;
+            } else {
+                var point = ray.getPoint(t);
+                var normal = new THREE.Vector3();
+                normal.subVectors(point, this.center).normalize();
+                return new dpIntersection(this, point, t, normal, null);
+            }
         }
     }
 };
@@ -378,7 +403,6 @@ function dpCheckboardMaterial(size) {
 }
 
 dpCheckboardMaterial.prototype = {
-    LENGTH_OF_ONE_BRICK: 100,
     BLACK: new THREE.Color(0x000000),
     WHITE: new THREE.Color(0xFFFFFF),
     initialize: function (position, normal) {
@@ -409,14 +433,14 @@ dpCheckboardMaterial.prototype = {
         // do the projection first
         var point = new THREE.Vector3(0, 0, 0);
         point.subVectors(position, this.UVCenter);
-        var _x = Math.floor(point.dot(this.u) / this.size);
-        var _y = Math.floor(point.dot(this.v) / this.size);
+        var _x = Math.floor(point.dot(this.u) / this.size - 0.5);
+        var _y = Math.floor(point.dot(this.v) / this.size - 0.5);
 
         // determine which color it should be shaded
         if ( (_x + _y) % 2 === 0) {
-            return this.BLACK;
-        } else {
             return this.WHITE;
+        } else {
+            return this.BLACK;
         }
     }
 };
@@ -476,15 +500,19 @@ dpPhongIlluminationMaterial.prototype = {
         finalColor.add(tempColor);
 
         // the diffuse and specular parts
-        diffuseColor.copy(this.specular).multiplyScalar(
+        diffuseColor.copy(this.diffuse).multiplyScalar(
             this.k_d * Math.max(incident.dot(normal), 0)
         );
-        specularColor.copy(this.specular).multiplyScalar(
-            this.k_s * Math.pow(
-                Math.max(reflective.dot(viewer), 0),
-                this.n_shiny
-            )
-        );
+        // if ( reflective.dot(normal) > 0 ) {
+            specularColor.copy(this.specular).multiplyScalar(
+                this.k_s * Math.pow(
+                    Math.max(reflective.dot(viewer), 0),
+                    // reflective.dot(viewer),
+                    this.n_shiny
+                )
+            );
+        // }
+
         tempColor.addColors(diffuseColor, specularColor).
         multiplyScalar(light.intensity * occlusion).multiply(light.color);
         finalColor.add(tempColor);
@@ -494,8 +522,9 @@ dpPhongIlluminationMaterial.prototype = {
 };
 
 var light_group = [
-    new dpPointLight(new THREE.Vector3(6,6,6), 40, new THREE.Color(0xffff00)),
-    new dpDirectionalLight(new THREE.Vector3(0,-1,0), 5, new THREE.Color(0xdddddd))
+    new dpPointLight(new THREE.Vector3(1,0,0), 6, new THREE.Color(0xffff00)),
+    new dpPointLight(new THREE.Vector3(4,0,0), 6, new THREE.Color(0xee88ff))
+    // new dpDirectionalLight(new THREE.Vector3(0,-1,0), 5, new THREE.Color(0xdddddd))
     // new dpDirectionalLight(new THREE.Vector3(-1,-1,-1), 5, new THREE.Color(0xdddddd))
 ];
 
@@ -512,25 +541,29 @@ var light_group = [
 var checkboard_scalar = 1;
 
 var object_group = [
-    new dpSphere(new THREE.Vector3(2,2,4), 2, new dpPhongIlluminationMaterial(
-        new THREE.Color().setStyle('darkgreen'),
-        new THREE.Color().setStyle('green'),
-        new THREE.Color().setStyle('greenyellow'),
-        0.2, 0.4, 0.6, 5)
-    ),
-    new dpSphere(new THREE.Vector3(6,2,4), 2, new dpPhongIlluminationMaterial(
-        new THREE.Color().setStyle('blue'),
-        new THREE.Color().setStyle('midnightblue'),
-        new THREE.Color().setStyle('whitesmoke'),
-        0.2, 0.4, 0.6, 5)
-    ),
+    // new dpSphere(new THREE.Vector3(2,2,4), 2, new dpPhongIlluminationMaterial(
+    //     new THREE.Color().setStyle('darkgreen'),
+    //     new THREE.Color().setStyle('green'),
+    //     new THREE.Color().setStyle('greenyellow'),
+    //     0.2, 0.4, 0.6, 5)
+    // ),
+    // new dpSphere(new THREE.Vector3(6,2,4), 2, new dpPhongIlluminationMaterial(
+    //     new THREE.Color().setStyle('blue'),
+    //     new THREE.Color().setStyle('midnightblue'),
+    //     new THREE.Color().setStyle('whitesmoke'),
+    //     0.2, 0.4, 0.6, 5)
+    // ),
     // new dpPlane(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(4 * checkboard_scalar)),
-    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
+    new dpPlane(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar)),
     // new dpPlane(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), new dpCheckboardMaterial(1 * checkboard_scalar))
 ];
 
-var dpCuboids = {
-    POSITIONS: [
+function dpScene() {
+
+}
+
+dpScene.prototype = {
+    CUBE_POSITIONS: [
         [0,0,0],
         [1,0,-1],
         [1,0,1],
@@ -541,23 +574,46 @@ var dpCuboids = {
         [1,1,0],
         [1,1,2]
     ],
-    drawInScene: function() {
-
-    }
-};
-
-var Spheres = {
-    POSITIONS: [
-        [4,0,2],
-        [2,0,4],
-        [-2,0,-2],
+    SPHERE_POSITIONS: [
+        // [4,0,2],
+        // [2,0,4],
+        [-2,0,-4],
         [3,0,-3],
-        [2,2,1],
-        [1,0,2],
-        [1,2,0]
+        // [2,2,1],
+        // [1,0,2],
+        [1,2,0],
+        [5,0,-2],
+        [1,2,-1]
     ],
-    drawInScene: function() {
+    CUBE_AND_SPHERE_RADIUS: 0.5,
+    drawInScene: function () {
+        "use strict";
 
+        var CUBE_AND_SPHERE_RADIUS = this.CUBE_AND_SPHERE_RADIUS;
+
+        var k_a = 0.2, k_d = 0.3, k_s = 2, n_shiny = 10;
+
+        this.CUBE_POSITIONS.forEach(function(item) {
+            var material = new dpPhongIlluminationMaterial(
+                new THREE.Color().setStyle('darkgreen'),
+                new THREE.Color().setStyle('green'),
+                new THREE.Color().setStyle('white'),
+                k_a, k_d, k_s, n_shiny);
+            var cube = new dpCube(new THREE.Vector3(item[0], item[1] + 0.5, item[2]), CUBE_AND_SPHERE_RADIUS * 2, material);
+
+            object_group.push(cube);
+        });
+
+        this.SPHERE_POSITIONS.forEach(function(item) {
+            var material = new dpPhongIlluminationMaterial(
+                new THREE.Color().setStyle('blue'),
+                new THREE.Color().setStyle('midnightblue'),
+                new THREE.Color().setStyle('white'),
+                k_a, k_d, k_s, n_shiny);
+            var sphere = new dpSphere(new THREE.Vector3(item[0], item[1] + 0.5, item[2]), CUBE_AND_SPHERE_RADIUS, material);
+
+            object_group.push(sphere);
+        });
     }
 };
 
@@ -565,7 +621,7 @@ var dpRayTracing = function() {
     "use strict";
 
     // private attributes and methods
-    var backgroundColor = new THREE.Color(0xFF8888);
+    var backgroundColor = new THREE.Color(0x000000);
 
     function shadeAtPoint(position, viewer, normal, material) {
         if (!(position instanceof THREE.Vector3) || !(viewer instanceof THREE.Vector3) ||
@@ -615,18 +671,7 @@ var dpRayTracing = function() {
         }
     }
 
-    // function rayTrace(ray) {
-    //     if (!(ray instanceof dpRay)) {
-    //         errout(ERROR_MISMATCHED_TYPE, true, true);
-    //     }
-    //     var closest = closestIntersection(ray);
-    //     if ( closest !== null ) {
-    //         return shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
-    //     } else {
-    //         return backgroundColor;
-    //     }
-    // }
-
+    // Modifying here is invalid.
     var MAX_DEPTH = 2;
     var REFLECTIVENESS = 0.25;
 
@@ -642,18 +687,21 @@ var dpRayTracing = function() {
             }
 
             var finalColor = new THREE.Color();
+            var viewer = new THREE.Vector3();
+            viewer.copy(ray.direction);
+            viewer.negate();
             if (depth < MAX_DEPTH) {
-                var reflectionVector = new THREE.Vector3();
-                reflectionVector.copy(closest.normal).multiplyScalar(-2 * closest.normal.dot(ray.direction));
-                reflectionVector.add(ray.direction);
-                var reflectionRay = new dpRay(closest.position, reflectionVector);
-                var reflectiveColor = recursiveRayTracer(reflectionRay, depth + 1, camera);
-                var shadingColor = shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+                var incidentVector = new THREE.Vector3();
+                incidentVector.copy(closest.normal).multiplyScalar(2 * closest.normal.dot(viewer));
+                incidentVector.sub(viewer);
+                var incidentRay = new dpRay(closest.position, incidentVector);
+                var reflectiveColor = recursiveRayTracer(incidentRay, depth + 1, camera);
+                var shadingColor = shadeAtPoint(closest.position, viewer, closest.normal, closest.object.material);
                 reflectiveColor.multiplyScalar(REFLECTIVENESS);
                 shadingColor.multiplyScalar(1 - REFLECTIVENESS);
                 finalColor.addColors(shadingColor, reflectiveColor);
             } else {
-                finalColor = shadeAtPoint(closest.position, ray.direction, closest.normal, closest.object.material);
+                finalColor = shadeAtPoint(closest.position, viewer, closest.normal, closest.object.material);
             }
 
             return finalColor;
@@ -666,6 +714,12 @@ var dpRayTracing = function() {
     var publicSet = {
         nTrace: function (ray, camera) {
             return recursiveRayTracer(ray, 0, camera);
+        },
+        setMaxDepth: function (maxDepth) {
+            MAX_DEPTH = maxDepth;
+        },
+        setReflectiveness: function (reflectiveness) {
+            REFLECTIVENESS = reflectiveness;
         }
     };
 
@@ -685,17 +739,54 @@ var dpCanvas2D = function () {  // open IIFE
     var canvasHeight;
     var pixelsRatio = 1;
 
+    var ANTI_ALIASING = true;
+
     // frame buffer, in the row-major order
     var frameBuffer;
 
     var camera;
+    var scene;
+
+    function getQueryVariable(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split("=");
+            if (pair[0] == variable) {
+                return decodeURIComponent(pair[1]);
+            }
+        }
+        return null;
+    }
 
     function initializeFrameBuffer() {
-        var i;
         var size = canvasWidth * canvasHeight;
         frameBuffer = new Array(size);
-        camera = new dpPerspectiveCamera(90, canvasWidth / canvasHeight, 1, 500);
-        camera.move( new THREE.Vector3(0,1,10), new THREE.Vector3(0,1,0), new THREE.Vector3(0,1,0) );
+        camera = new dpPerspectiveCamera(60, canvasWidth / canvasHeight, 1, 500);
+        camera.move( new THREE.Vector3(7, 1 + 0.5, 0), new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0) );
+        scene = new dpScene();
+        scene.drawInScene();
+
+        var aa = getQueryVariable("antialiasing");
+        if (aa === 'true') {
+            aa = true;
+        } else if (aa === 'false') {
+            aa = false;
+        } else {
+            aa = false;
+        }
+        ANTI_ALIASING = aa;
+
+        var depth = getQueryVariable("maxdepth");
+        if (depth !== null) {
+            depth = parseInt(depth);
+        } else {
+            depth = 2;
+        }
+        dpRayTracing.setMaxDepth(depth);
+
+        $('#parameter-list').html('Max traversing depth = ' + depth + '<\/br>' +
+            'Anti-aliasing = ' + aa);
     }
 
     function showFrameBuffer() {
@@ -746,22 +837,24 @@ var dpCanvas2D = function () {  // open IIFE
             var colors = [null, null, null, null, null];
             for (r = 0; r < canvasHeight; r++) {
                 for (c = 0; c < canvasWidth; c++) {
-                    // frameBuffer[r * canvasWidth + c] = dpRayTracing.nTrace(camera.getViewerRay(c, r, canvasWidth, canvasHeight), camera);
-                    colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
-                    colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
-                    colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.00, r + 0.00, canvasWidth, canvasHeight), camera);
-                    colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
-                    colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
-                    sum_r = 0; sum_g = 0; sum_b = 0;
-                    for (var i = 0; i < 5; i++) {
-                        sum_r += colors[i].r;
-                        sum_g += colors[i].g;
-                        sum_b += colors[i].b;
+                    if (!ANTI_ALIASING) {
+                        frameBuffer[r * canvasWidth + c] = dpRayTracing.nTrace(camera.getViewerRay(c, r, canvasWidth, canvasHeight), camera);
+                    } else {
+                        colors[0] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
+                        colors[1] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r - 0.25, canvasWidth, canvasHeight), camera);
+                        colors[2] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.00, r + 0.00, canvasWidth, canvasHeight), camera);
+                        colors[3] = dpRayTracing.nTrace(camera.getViewerRay(c - 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
+                        colors[4] = dpRayTracing.nTrace(camera.getViewerRay(c + 0.25, r + 0.25, canvasWidth, canvasHeight), camera);
+                        sum_r = 0; sum_g = 0; sum_b = 0;
+                        for (var i = 0; i < 5; i++) {
+                            sum_r += colors[i].r;
+                            sum_g += colors[i].g;
+                            sum_b += colors[i].b;
+                        }
+                        frameBuffer[r * canvasWidth + c] = new THREE.Color(sum_r / 5, sum_g / 5, sum_b / 5);
                     }
-                    frameBuffer[r * canvasWidth + c] = new THREE.Color(sum_r / 5, sum_g / 5, sum_b / 5);
                 }
             }
-            // drawRectangle(200, 100, 240, 120, new THREE.Color(0xff0000));
             showFrameBuffer();
         }
     };
